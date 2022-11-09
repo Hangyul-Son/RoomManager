@@ -3,9 +3,9 @@
 
 #include "stm32f1xx_hal.h"
 
-uint16_t DHT_ReadSensor ( void );
-uint16_t DHT_ProcessSensorData ( uint16_t dhtData );
-uint16_t DHT_GetTemperature ( void );
-uint16_t DHT_GetHumidity ( void ); 
+void DHT_Start(void);
+void DHT_ReadSensor (uint8_t* data);
+bool DHT_ProcessSensorData (uint8_t* data, float *Temp, float *Humidity );
+bool DHT_GetTemperatureAndHumidity (float *Temp, float *Humidity);
 
 #endif
