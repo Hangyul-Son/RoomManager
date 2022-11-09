@@ -2,6 +2,9 @@
 #define	__DHT_H
 
 
-void DHT_Calculate
+uint16_t DHT_ReadSensor ( void );
+uint16_t DHT_ProcessSensorData ( uint16_t dhtData );
+uint16_t DHT_GetTemperature ( void );
+uint16_t DHT_GetHumidity ( void ); 
 
 #endif
