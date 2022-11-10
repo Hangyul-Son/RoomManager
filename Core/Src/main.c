@@ -90,14 +90,17 @@ int main(void)
   MX_FSMC_Init();
   /* USER CODE BEGIN 2 */
   LCD_INIT();
+  DHT_INIT(GPIOB,GPIO_PIN_6);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  float Temp, Humidity;
   while (1)
   {
     /* USER CODE END WHILE */
-
+	  if (DHT_GetTemperatureAndHumidity(&Temp, &Humidity)){
+	  }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

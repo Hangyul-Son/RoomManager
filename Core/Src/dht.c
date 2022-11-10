@@ -1,8 +1,12 @@
 
+
+#include "dht.h"
+#include "utility.h"
+
 GPIO_TypeDef* DHT_PORT;
 uint16_t DHT_PIN;
 
-void DHT_Init(GPIO_TypeDef* DataPort, uint16_t DataPin)
+void DHT_INIT(GPIO_TypeDef* DataPort, uint16_t DataPin)
 {
 	DHT_PORT = DataPort;
 	DHT_PIN = DataPin;
@@ -12,7 +16,7 @@ void DHT_Start (void)
 {
 	//Change data pin mode to OUTPUT
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
-	GPIO_InitStruct.Pin = DHT_PORT;
+	GPIO_InitStruct.Pin = DHT_PIN;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -90,7 +94,7 @@ bool DHT_ProcessSensorData (uint8_t* data, float *Temp, float *Humidity)
 		*Humidity = Humid16/10.0f;
 		return 1;
 	}
-	return 0
+	return 0;
 }
 
 
@@ -104,6 +108,6 @@ bool DHT_GetTemperatureAndHumidity (float *Temp, float *Humidity)
 
     DHT_ReadSensor(rawData);
 
-    return DHT_ProcessSensorData(rawData, Temp, Humidity)
+    return DHT_ProcessSensorData(rawData, Temp, Humidity);
 
 }
