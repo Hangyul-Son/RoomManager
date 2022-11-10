@@ -1,26 +1,33 @@
 
+GPIO_TypeDef* DHT_PORT;
+uint16_t DHT_PIN;
 
+void DHT_Init(GPIO_TypeDef* DataPort, uint16_t DataPin)
+{
+	DHT_PORT = DataPort;
+	DHT_PIN = DataPin;
+}
 
 void DHT_Start (void)
 {
 	//Change data pin mode to OUTPUT
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
-	GPIO_InitStruct.Pin = GPIO_PIN_1;
+	GPIO_InitStruct.Pin = DHT_PORT;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	HAL_GPIO_Init(DHT_PORT, &GPIO_InitStruct);
 	//Put pin LOW
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(DHT_PORT, DHT_PIN, GPIO_PIN_RESET);
 	//500uSec delay
 	DelayMicroSeconds(500);
 	//Bring pin HIGH
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(DHT_PORT, DHT_PIN, GPIO_PIN_SET);
 	//30 uSec delay
 	DelayMicroSeconds(30);
 	//Set pin as input
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	HAL_GPIO_Init(DHT_PORT, &GPIO_InitStruct);
 }
 
 
@@ -32,29 +39,29 @@ void DHT_ReadSensor (uint8_t* data)
 
     DelayMicroSeconds(40);
 
-    while(!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1));
-    while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1));
+    while(!HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN));
+    while(HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN));
 
     for(int8_t i=31; i>=0; i--)
     {
-        while(!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1));
+        while(!HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN));
         DelayMicroSeconds(40);
-        if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1))
+        if(HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN))
         {
             rawBits |= (1UL << i);
         }
-        while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1));
+        while(HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN));
     }
 
     for(int8_t i=7; i>=0; i--)
     {
-        while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1));
+        while(HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN));
         DelayMicroSeconds(40);
-        if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1))
+        if(HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN))
         {
             checksumBits |= (1UL << i);
         }
-        while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1));
+        while(HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN));
     }
 
 
