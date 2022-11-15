@@ -1,8 +1,10 @@
 #ifndef __UTILITY_H
 #define	__UTILITY_H
 
-#include "main.h"
+#include "stm32f1xx_hal.h"
 
-void DelayMicroSeconds(uint32_t uSec);
+
+uint32_t DWT_Delay_Init(void);
+void DelayMicroSeconds(volatile uint32_t au32_microseconds);
 
 #endif
