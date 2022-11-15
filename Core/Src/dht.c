@@ -1,17 +1,22 @@
 
 
 #include "dht.h"
+#include "main.h"
+#include "lcd.h"
 #include "utility.h"
 
 GPIO_TypeDef* DHT_PORT;
 uint16_t DHT_PIN;
 
-void DHT_INIT(GPIO_TypeDef* DataPort, uint16_t DataPin)
+void DHT_Init(GPIO_TypeDef* DataPort, uint16_t DataPin)
 {
 	DHT_PORT = DataPort;
 	DHT_PIN = DataPin;
 }
 
+void DHT_Test(void){
+	HAL_GPIO_WritePin(DHT_PORT,DHT_PIN, GPIO_PIN_SET);
+}
 void DHT_Start (void)
 {
 	//Change data pin mode to OUTPUT
@@ -22,16 +27,20 @@ void DHT_Start (void)
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(DHT_PORT, &GPIO_InitStruct);
 	//Put pin LOW
+
 	HAL_GPIO_WritePin(DHT_PORT, DHT_PIN, GPIO_PIN_RESET);
 	//500uSec delay
-	DelayMicroSeconds(500);
+	DelayMicroSeconds(1200);
 	//Bring pin HIGH
 	HAL_GPIO_WritePin(DHT_PORT, DHT_PIN, GPIO_PIN_SET);
 	//30 uSec delay
 	DelayMicroSeconds(30);
 	//Set pin as input
+	GPIO_InitStruct.Pin = DHT_PIN;
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
 	HAL_GPIO_Init(DHT_PORT, &GPIO_InitStruct);
+//	LCD_DrawChar(0,0,'A');
 }
 
 
@@ -39,33 +48,32 @@ void DHT_ReadSensor (uint8_t* data)
 {
 
     uint32_t rawBits = 0UL;
-    uint8_t checksumBits=0;
+    uint8_t checksumBits = 0UL;
 
     DelayMicroSeconds(40);
 
-    while(!HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN));
-    while(HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN));
-
+    while(!(1&HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN)));
+    while((1&HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN)));
     for(int8_t i=31; i>=0; i--)
     {
-        while(!HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN));
+        while(!(1&HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN)));
         DelayMicroSeconds(40);
-        if(HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN))
+        if((1&HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN)))
         {
             rawBits |= (1UL << i);
         }
-        while(HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN));
+        while((1&HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN)));
     }
 
     for(int8_t i=7; i>=0; i--)
     {
-        while(HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN));
+        while(!(1&HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN)));
         DelayMicroSeconds(40);
-        if(HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN))
+        if((1&HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN)))
         {
             checksumBits |= (1UL << i);
         }
-        while(HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN));
+        while((1&HAL_GPIO_ReadPin(DHT_PORT, DHT_PIN)));
     }
 
 
@@ -94,7 +102,10 @@ bool DHT_ProcessSensorData (uint8_t* data, float *Temp, float *Humidity)
 		*Humidity = Humid16/10.0f;
 		return 1;
 	}
-	return 0;
+	else
+	{
+		return 0;
+	}
 }
 
 
@@ -105,7 +116,6 @@ bool DHT_GetTemperatureAndHumidity (float *Temp, float *Humidity)
     uint8_t rawData[6];
 
     DHT_Start();
-
     DHT_ReadSensor(rawData);
 
     return DHT_ProcessSensorData(rawData, Temp, Humidity);

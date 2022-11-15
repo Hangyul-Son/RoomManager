@@ -36,6 +36,7 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+void DelayMicroSeconds(volatile uint32_t au32_microseconds);
 
 /* USER CODE END ET */
 
