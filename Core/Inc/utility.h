@@ -6,5 +6,6 @@
 
 uint32_t DWT_Delay_Init(void);
 void DelayMicroSeconds(volatile uint32_t au32_microseconds);
+float GetDiscomfortIndex(float *Temperature, float* Humidity);
 
 #endif

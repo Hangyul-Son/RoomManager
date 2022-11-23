@@ -50,6 +50,8 @@ void DelayMicroSeconds(volatile uint32_t au32_microseconds);
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 

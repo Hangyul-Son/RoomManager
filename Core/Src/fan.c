@@ -14,7 +14,7 @@ void FAN_Init(GPIO_TypeDef* DataPortA, uint16_t DataPinA, GPIO_TypeDef* DataPort
 }
 
 // Left: 0, Right: 1
-void FAN_Rotate (char dir, uint16_t speed )
+void FAN_Rotate (char dir )
 {
 	if (dir == 'r'){
 		HAL_GPIO_WritePin(FAN_PORT_A, FAN_PIN_A, GPIO_PIN_SET);
@@ -30,8 +30,4 @@ void FAN_Off ()
 {
 	HAL_GPIO_WritePin(FAN_PORT_A, FAN_PIN_A, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(FAN_PORT_B, FAN_PIN_B, GPIO_PIN_RESET);
-}
-uint16_t FAN_GetSpeed (uint16_t dhtData)
-{
-	return 0;
 }

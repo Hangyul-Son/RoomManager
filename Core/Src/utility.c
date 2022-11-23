@@ -39,3 +39,7 @@ void DelayMicroSeconds(volatile uint32_t au32_microseconds)
   au32_microseconds *= au32_ticks;
   while ((DWT->CYCCNT - au32_initial_ticks) < au32_microseconds-au32_ticks);
 }
+
+float GetDiscomfortIndex(float *Temperature, float* Humidity){
+	return (*Temperature)-0.55*(1-0.01*(*Humidity))*((*Temperature)-14.5);
+}
