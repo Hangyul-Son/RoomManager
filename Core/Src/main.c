@@ -51,13 +51,13 @@ UART_HandleTypeDef huart3;
 SRAM_HandleTypeDef hsram1;
 
 /* USER CODE BEGIN PV */
-uint8_t rxData;
-uint8_t rxString[7];
+char rxData;
+char rxString[7];
 bool FAN_ON = false;
 bool LCD_ON = true;
 bool ALARM_ON = false;
 bool DHT_ON = false;
-uint8_t strConfig[100] = "";
+char strConfig[100] = "";
 
 
 
@@ -131,14 +131,14 @@ int main(void)
 
   while (1)
   {
-	  if (HAL_UART_Receive(&huart3,rxString,size_str,200)==HAL_OK) {
+	  if (HAL_UART_Receive(&huart3,(uint8_t*)rxString,size_str,200)==HAL_OK) {
 		  if(checkFanON(rxString)) FAN_ON = true;
 		  else if(checkFanOFF(rxString))FAN_ON = false;
 		  else if(checkLcdON(rxString)) LCD_ON = true;
 		  else if(checkLcdOFF(rxString))LCD_ON = false;
 		  else if (checkSummary(rxString)){
 			int size = buildSummary(FAN_ON, LCD_ON, strConfig);
-			HAL_UART_Transmit(&huart3, strConfig, size, 200);
+			HAL_UART_Transmit(&huart3, (uint8_t*)strConfig, size, 200);
 		  }
 	  }
 

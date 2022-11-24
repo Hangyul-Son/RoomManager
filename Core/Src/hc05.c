@@ -24,33 +24,33 @@ bool alarmSwitch;
  *
  */
 
-void checkAlarm(uint8_t* rxString)
+bool checkAlarm(const char* rxString)
 {
 	return !strncmp(rxString,strAlarm[1],size_str);
 }
 
 
-bool checkFanON(uint8_t* rxString)
+bool checkFanON(const char* rxString)
 {
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
 	return !strncmp(rxString,strFan[1],size_str);
 }
-bool checkFanOFF(uint8_t* rxString)
+bool checkFanOFF(const char* rxString)
 {
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
 	return !strncmp(rxString,strFan[2],size_str);
 }
 
-bool checkLcdON(uint8_t* rxString)
+bool checkLcdON(const char* rxString)
 {
 	return !strncmp(rxString,strLcd[1],size_str);
 }
-bool checkLcdOFF(uint8_t* rxString)
+bool checkLcdOFF(const char* rxString)
 {
 	return !strncmp(rxString,strLcd[2],size_str);
 }
 
-uint8_t buildSummary(bool FAN_ON, bool LCD_ON, uint8_t* strConfig)
+uint8_t buildSummary(bool FAN_ON, bool LCD_ON, char* strConfig)
 {
 	int size = 0;
 	uint8_t strInit[100]= "";
@@ -89,7 +89,7 @@ uint8_t buildSummary(bool FAN_ON, bool LCD_ON, uint8_t* strConfig)
 	return size;
 }
 
-bool checkSummary(uint8_t* rxString)
+bool checkSummary(const char* rxString)
 {
 	return !strncmp(rxString, strUtility[0], size_str);
 }
