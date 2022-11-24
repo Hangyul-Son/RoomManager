@@ -24,10 +24,7 @@
 #include "lcd.h"
 #include "dht.h"
 #include "fan.h"
-#include "utility.h"
 #include "hc05.h"
-#include <stdio.h>
-#include <string.h>
 
 /* USER CODE END Includes */
 
@@ -60,6 +57,10 @@ bool FAN_ON = false;
 bool LCD_ON = true;
 bool ALARM_ON = false;
 bool DHT_ON = false;
+uint8_t strConfig[100] = "";
+
+
+
 
 /* USER CODE END PV */
 
@@ -122,6 +123,7 @@ int main(void)
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
 //  HAL_UART_Receive_IT(&huart3,rxString, 7);
 
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -129,6 +131,17 @@ int main(void)
 
   while (1)
   {
+	  if (HAL_UART_Receive(&huart3,rxString,size_str,200)==HAL_OK) {
+		  if(checkFanON(rxString)) FAN_ON = true;
+		  else if(checkFanOFF(rxString))FAN_ON = false;
+		  else if(checkLcdON(rxString)) LCD_ON = true;
+		  else if(checkLcdOFF(rxString))LCD_ON = false;
+		  else if (checkSummary(rxString)){
+			int size = buildSummary(FAN_ON, LCD_ON, strConfig);
+			HAL_UART_Transmit(&huart3, strConfig, size, 200);
+		  }
+	  }
+
 	  if (!LCD_ON){
 		  continue;
 	  }
@@ -140,16 +153,7 @@ int main(void)
 				  }
 			  }
 	  }
-	  if (HAL_UART_Receive(&huart3,rxString,7,200)==HAL_OK) {
-		if(strncmp(rxString,strFAN[0], sizeof(rxString)) == 0)
-		{
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
-		}
-		else if (strncmp(rxString, strFAN[1], sizeof(rxString)) == 0)
-		{
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
-		}
-	  }
+
 
 
 
@@ -554,23 +558,23 @@ void user_pwm_setvalue(TIM_HandleTypeDef *htim, uint32_t TIM_CHANNEL, uint16_t v
     HAL_TIM_PWM_Start(htim, TIM_CHANNEL);
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-  if(huart->Instance==USART3)
-  {
-//	LCD_DrawString(0,0,strFAN[0]);
-//	LCD_DrawString(0,20,rxString);
-    if(strncmp(rxString,strFAN[0], sizeof(rxString)) == 0)
-    {
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
-    }
-    else if (strncmp(rxString, strFAN[1], sizeof(rxString)) == 0)
-    {
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
-    }
-    HAL_UART_Receive_IT(&huart3,rxString, 7); // Enabling interrupt receive again
-  }
-}
+//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+//{
+//  if(huart->Instance==USART3)
+//  {
+////	LCD_DrawString(0,0,strFAN[0]);
+////	LCD_DrawString(0,20,rxString);
+//    if(strncmp(rxString,strFan[0], sizeof(rxString)) == 0)
+//    {
+//    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
+//    }
+//    else if (strncmp(rxString, strFan[1], sizeof(rxString)) == 0)
+//    {
+//    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
+//    }
+//    HAL_UART_Receive_IT(&huart3,rxString, 7); // Enabling interrupt receive again
+//  }
+//}
 /* USER CODE END 4 */
 
 /**

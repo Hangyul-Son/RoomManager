@@ -3,7 +3,9 @@
 #include "dht.h"
 #include "main.h"
 #include "lcd.h"
-#include "utility.h"
+
+
+float Temperature, Humidity;
 
 GPIO_TypeDef* DHT_PORT;
 uint16_t DHT_PIN;
@@ -119,5 +121,29 @@ bool DHT_GetTemperatureAndHumidity (float *Temp, float *Humidity)
     DHT_ReadSensor(rawData);
 
     return DHT_ProcessSensorData(rawData, Temp, Humidity);
+
+}
+
+float DHT_Get_DI()
+{
+	//Calculate Discomfort Index
+	return GetDiscomfortIndex(&Temperature, &Humidity);
+}
+
+void DHT_Display()
+{
+	LCD_Clear(0,0,240,320, WHITE);
+	char temperature[5], humidity[5];
+	sprintf(temperature, "%.2f", Temperature);
+	sprintf(humidity, "%.2f", Humidity);
+	LCD_DrawString(60,100, temperature);
+	LCD_DrawString(120,100, humidity);
+}
+
+
+bool DHT_Check()
+{
+	return DHT_GetTemperatureAndHumidity(&Temperature, &Humidity);
+
 
 }
