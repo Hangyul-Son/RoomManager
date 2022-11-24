@@ -25,6 +25,7 @@
 #include "dht.h"
 #include "fan.h"
 #include "utility.h"
+#include "hc05.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -54,6 +55,11 @@ SRAM_HandleTypeDef hsram1;
 
 /* USER CODE BEGIN PV */
 uint8_t rxData;
+uint8_t rxString[7];
+bool FAN_ON = false;
+bool LCD_ON = true;
+bool ALARM_ON = false;
+bool DHT_ON = false;
 
 /* USER CODE END PV */
 
@@ -114,55 +120,90 @@ int main(void)
   DHT_Init(GPIOA,GPIO_PIN_6);
   FAN_Init(GPIOA, GPIO_PIN_11, GPIOA, GPIO_PIN_12);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
-  HAL_UART_Receive_IT(&huart3,&rxData,1);
+//  HAL_UART_Receive_IT(&huart3,rxString, 7);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  float Temperature, Humidity;
-  char temperature[5], humidity[5];
-  char DI[3];
-  float di;
-  int pwm_pulse;
+
   while (1)
   {
+	  if (!LCD_ON){
+		  continue;
+	  }
+	  if (DHT_ON){
+		  if(DHT_Check()){
+				  DHT_Display();
+				  if (FAN_ON) {
+					  FAN_Rotate(DHT_Get_DI(), 0);
+				  }
+			  }
+	  }
+	  if (HAL_UART_Receive(&huart3,rxString,7,200)==HAL_OK) {
+		if(strncmp(rxString,strFAN[0], sizeof(rxString)) == 0)
+		{
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
+		}
+		else if (strncmp(rxString, strFAN[1], sizeof(rxString)) == 0)
+		{
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
+		}
+	  }
+
+
+
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if(DHT_GetTemperatureAndHumidity(&Temperature, &Humidity))
-	  {
-		  LCD_Clear(0,0,240,320, WHITE);
-		  sprintf(temperature, "%.2f", Temperature);
-		  sprintf(humidity, "%.2f", Humidity);
-		  LCD_DrawString(60,100, temperature);
-		  LCD_DrawString(120,100, humidity);
-	  }
-	  else {
-		  LCD_DrawString(100,100, "No Value");
-	  }
-
-	  //Calculate Discomfort Index
-	  di = GetDiscomfortIndex(&Temperature, &Humidity);
-
-	  sprintf(DI, "%.2f", di);
-	  LCD_DrawString(0,0,DI);
-
-	  pwm_pulse = (int)(di-23)*(64/11);
-	  HAL_Delay(1000);
-
-
-	  //Must implement double threshold to prevent consecutive on and off of the fan.
-	  //Changing the while loop functions to interrupts will be done after consulting with Hojin.
-	  if (pwm_pulse < 0){
-		  FAN_Off();
-	  }
-	  else {
-//		  user_pwm_setvalue(&htim2, TIM_CHANNEL_4, 0);
-		  FAN_Rotate('l');
-		  HAL_Delay(100);
-		  FAN_Off();
-	  }
+//	if (HAL_UART_Receive(&huart3,&rxData,1,100)==HAL_OK) {
+//		LCD_DrawChar(0,0,'C');
+//	    if(rxData=='O') // Ascii value of 'O' is 79
+//	    {
+//	    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
+//	    	LCD_DrawChar(0,30,'D');
+//	    }
+//	    else if (rxData=='X') // Ascii value of 'X' is 88
+//	    {
+//	    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
+//	    	LCD_DrawChar(0,30,'E');
+//	    }
+//	}
+//	  if(DHT_GetTemperatureAndHumidity(&Temperature, &Humidity))
+//	  {
+//		  LCD_Clear(0,0,240,320, WHITE);
+//		  sprintf(temperature, "%.2f", Temperature);
+//		  sprintf(humidity, "%.2f", Humidity);
+//		  LCD_DrawString(60,100, temperature);
+//		  LCD_DrawString(120,100, humidity);
+//	  }
+//	  else {
+//		  LCD_DrawString(100,100, "No Value");
+//	  }
+//
+//	  //Calculate Discomfort Index
+//	  di = GetDiscomfortIndex(&Temperature, &Humidity);
+//
+//	  sprintf(DI, "%.2f", di);
+//	  LCD_DrawString(0,0,DI);
+//
+//	  pwm_pulse = (int)(di-23)*(64/11);
+//	  HAL_Delay(1000);
+//
+//
+//	  //Must implement double threshold to prevent consecutive on and off of the fan.
+//	  //Changing the while loop functions to interrupts will be done after consulting with Hojin.
+//	  if (pwm_pulse < 0){
+//		  FAN_Off();
+//	  }
+//	  else {
+////		  user_pwm_setvalue(&htim2, TIM_CHANNEL_4, 0);
+//		  FAN_Rotate('l');
+//		  HAL_Delay(100);
+//		  FAN_Off();
+//	  }
   }
   /* USER CODE END 3 */
 }
@@ -517,15 +558,17 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if(huart->Instance==USART3)
   {
-    if(rxData==79) // Ascii value of 'O' is 79
+//	LCD_DrawString(0,0,strFAN[0]);
+//	LCD_DrawString(0,20,rxString);
+    if(strncmp(rxString,strFAN[0], sizeof(rxString)) == 0)
     {
     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
     }
-    else if (rxData==88) // Ascii value of 'X' is 88
+    else if (strncmp(rxString, strFAN[1], sizeof(rxString)) == 0)
     {
     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
     }
-    HAL_UART_Receive_IT(huart,&rxData,1); // Enabling interrupt receive again
+    HAL_UART_Receive_IT(&huart3,rxString, 7); // Enabling interrupt receive again
   }
 }
 /* USER CODE END 4 */
