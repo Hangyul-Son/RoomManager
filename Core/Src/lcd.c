@@ -517,4 +517,30 @@ void LCD_DrawEllipse ( uint16_t usC, uint16_t usP, uint16_t SR, uint16_t LR, uin
 		}
 	}
 }
+void LCD_Cam_Gram()
+{
+	/* memory access control set */
+	DEBUG_DELAY ();
+	LCD_Write_Cmd ( 0x36 );
+	LCD_Write_Data ( 0x68 );
+	DEBUG_DELAY ();
+
+	/* column address control set */
+	LCD_Write_Cmd ( CMD_Set_COLUMN );
+	LCD_Write_Data ( 0x00 );
+	LCD_Write_Data ( 0x00 );
+	LCD_Write_Data ( 0x01 );
+	LCD_Write_Data ( 0x3F );
+
+	/* page address control set */
+	DEBUG_DELAY ();
+	LCD_Write_Cmd ( CMD_Set_PAGE );
+	LCD_Write_Data ( 0x00 );
+	LCD_Write_Data ( 0x00 );
+	LCD_Write_Data ( 0x00 );
+	LCD_Write_Data ( 0xEF );
+
+	LCD_Write_Cmd ( 0x2C );
+
+}
 
