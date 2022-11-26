@@ -1,33 +1,20 @@
 #include "fan.h"
 
-GPIO_TypeDef* FAN_PORT_A;
-uint16_t FAN_PIN_A;
-GPIO_TypeDef* FAN_PORT_B;
-uint16_t FAN_PIN_B;
+TIM_HandleTypeDef *htim;
+uint32_t Channel;
 
-void FAN_Init(GPIO_TypeDef* DataPortA, uint16_t DataPinA, GPIO_TypeDef* DataPortB, uint16_t DataPinB)
+void FAN_Init(TIM_HandleTypeDef *htim, uint32_t Channel)
 {
-	FAN_PORT_A = DataPortA;
-	FAN_PIN_A = DataPinA;
-	FAN_PORT_B = DataPortB;
-	FAN_PIN_B = DataPinB;
+	htim = htim;
+	Channel = Channel;
 }
 
-// Left: 0, Right: 1
-void FAN_Rotate (char dir, int speed )
+void FAN_Rotate (int speed)
 {
-	if (dir == 'r'){
-		HAL_GPIO_WritePin(FAN_PORT_A, FAN_PIN_A, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(FAN_PORT_B, FAN_PIN_B, GPIO_PIN_RESET);
-	}
-	else if(dir == 'l'){
-		HAL_GPIO_WritePin(FAN_PORT_A, FAN_PIN_A, GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(FAN_PORT_B, FAN_PIN_B, GPIO_PIN_SET);
-	}
+	user_pwm_setvalue(htim, Channel, speed);
 }
 
 void FAN_Off ()
 {
-	HAL_GPIO_WritePin(FAN_PORT_A, FAN_PIN_A, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(FAN_PORT_B, FAN_PIN_B, GPIO_PIN_RESET);
+	user_pwm_setvalue(htim, Channel, 0);
 }

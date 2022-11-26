@@ -53,7 +53,7 @@ SRAM_HandleTypeDef hsram1;
 /* USER CODE BEGIN PV */
 char rxData;
 char rxString[7];
-bool FAN_ON = false;
+bool FAN_ON = true;
 bool LCD_ON = true;
 bool ALARM_ON = false;
 bool DHT_ON = false;
@@ -119,8 +119,9 @@ int main(void)
   LCD_INIT();
   DWT_Delay_Init();
   DHT_Init(GPIOA,GPIO_PIN_6);
-  FAN_Init(GPIOA, GPIO_PIN_11, GPIOA, GPIO_PIN_12);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+  FAN_Init(&htim2,TIM_CHANNEL_4);
+
 //  HAL_UART_Receive_IT(&huart3,rxString, 7);
 
 
@@ -131,7 +132,7 @@ int main(void)
 
   while (1)
   {
-	  if (HAL_UART_Receive(&huart3,(uint8_t*)rxString,size_str,200)==HAL_OK) {
+	  if (HAL_UART_Receive(&huart3,(uint8_t*)rxString,7,200)==HAL_OK) {
 		  if(checkFanON(rxString)) FAN_ON = true;
 		  else if(checkFanOFF(rxString))FAN_ON = false;
 		  else if(checkLcdON(rxString)) LCD_ON = true;
@@ -145,11 +146,12 @@ int main(void)
 	  if (!LCD_ON){
 		  continue;
 	  }
+
 	  if (DHT_ON){
 		  if(DHT_Check()){
 				  DHT_Display();
 				  if (FAN_ON) {
-					  FAN_Rotate(DHT_Get_DI(), 0);
+					  FAN_Rotate(0);
 				  }
 			  }
 	  }
@@ -273,7 +275,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 63;
+  htim2.Init.Period = 10;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -332,7 +334,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 0;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 63;
+  htim3.Init.Period = 10;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)

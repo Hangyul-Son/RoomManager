@@ -37,6 +37,7 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 void DelayMicroSeconds(volatile uint32_t au32_microseconds);
+void user_pwm_setvalue(TIM_HandleTypeDef *htim, uint32_t TIM_CHANNEL, uint16_t value);
 
 /* USER CODE END ET */
 
