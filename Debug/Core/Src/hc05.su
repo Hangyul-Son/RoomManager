@@ -1,0 +1,7 @@
+../Core/Src/hc05.c:27:6:checkAlarm	16	static
+../Core/Src/hc05.c:33:6:checkFanON	16	static
+../Core/Src/hc05.c:38:6:checkFanOFF	16	static
+../Core/Src/hc05.c:44:6:checkLcdON	16	static
+../Core/Src/hc05.c:48:6:checkLcdOFF	16	static
+../Core/Src/hc05.c:53:9:buildSummary	120	static
+../Core/Src/hc05.c:92:6:checkSummary	16	static

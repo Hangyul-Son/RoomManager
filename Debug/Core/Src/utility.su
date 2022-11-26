@@ -1,0 +1,3 @@
+../Core/Src/utility.c:4:10:DWT_Delay_Init	4	static,ignoring_inline_asm
+../Core/Src/utility.c:35:6:DelayMicroSeconds	24	static
+../Core/Src/utility.c:43:7:GetDiscomfortIndex	32	static

@@ -132,12 +132,12 @@ float DHT_Get_DI()
 
 void DHT_Display()
 {
-	LCD_Clear(0,0,240,320, WHITE);
-	char temperature[5], humidity[5];
-	sprintf(temperature, "%.2f", Temperature);
-	sprintf(humidity, "%.2f", Humidity);
-	LCD_DrawString(60,100, temperature);
-	LCD_DrawString(120,100, humidity);
+	char temperature[20], humidity[20];
+	sprintf(temperature, "Temperature: %.2f", Temperature);
+	sprintf(humidity, "Humidity: %.2f", Humidity);
+
+	LCD_DrawString(20,260, temperature);
+	LCD_DrawString(20,280, humidity);
 }
 
 

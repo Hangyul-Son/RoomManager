@@ -1,0 +1,3 @@
+../Core/Src/fan.c:6:6:FAN_Init	16	static
+../Core/Src/fan.c:12:6:FAN_Rotate	16	static
+../Core/Src/fan.c:17:6:FAN_Off	8	static

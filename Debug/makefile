@@ -60,8 +60,8 @@ all: main-build
 main-build: RoomManager.elf secondary-outputs
 
 # Tool invocations
-RoomManager.elf RoomManager.map: $(OBJS) $(USER_OBJS) /Users/hojinyun/STM32CubeIDE/workspace_1.9.0/RoomManager/STM32F103VETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "RoomManager.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/Users/hojinyun/STM32CubeIDE/workspace_1.9.0/RoomManager/STM32F103VETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="RoomManager.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+RoomManager.elf RoomManager.map: $(OBJS) $(USER_OBJS) /Users/hangyulson/STM32CubeIDE/workspace_1.9.0/RoomManager/STM32F103VETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "RoomManager.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/Users/hangyulson/STM32CubeIDE/workspace_1.9.0/RoomManager/STM32F103VETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="RoomManager.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
