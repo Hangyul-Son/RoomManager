@@ -47,6 +47,17 @@ SRAM_HandleTypeDef hsram1;
 uint8_t alarm_on = 0;
 uint8_t ringing = 0;
 uint8_t bonus_time = 0;
+char rxData;
+char rxString[7];
+bool FAN_ON = true;
+bool LCD_ON = true;
+bool ALARM_ON = false;
+bool DHT_ON = false;
+char strConfig[100] = "";
+
+
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -222,12 +233,49 @@ int main(void)
   set_time(0x0,0x0,0x0);
   //}
   set_alarm(0x0,0x0,0x5);
+  DWT_Delay_Init();
+  DHT_Init(GPIOA,GPIO_PIN_6);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+  FAN_Init(&htim2,TIM_CHANNEL_4);
+
+//  HAL_UART_Receive_IT(&huart3,rxString, 7);
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  if (HAL_UART_Receive(&huart3,(uint8_t*)rxString,7,200)==HAL_OK) {
+		  if(checkFanON(rxString)) FAN_ON = true;
+		  else if(checkFanOFF(rxString))FAN_ON = false;
+		  else if(checkLcdON(rxString)) LCD_ON = true;
+		  else if(checkLcdOFF(rxString))LCD_ON = false;
+		  else if (checkSummary(rxString)){
+			int size = buildSummary(FAN_ON, LCD_ON, strConfig);
+			HAL_UART_Transmit(&huart3, (uint8_t*)strConfig, size, 200);
+		  }
+	  }
+
+	  if (!LCD_ON){
+		  continue;
+	  }
+
+	  if (DHT_ON){
+		  if(DHT_Check()){
+				  DHT_Display();
+				  if (FAN_ON) {
+					  FAN_Rotate(0);
+				  }
+			  }
+	  }
+
+
+
+
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -280,6 +328,57 @@ void SystemClock_Config(void)
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
   PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 0;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 10;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
   }
