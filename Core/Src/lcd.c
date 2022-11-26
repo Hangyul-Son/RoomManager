@@ -434,8 +434,9 @@ void LCD_DrawDot(uint16_t usCOLUMN, uint16_t usPAGE, uint16_t usColor)
 	/*
 	 *  Task 2 : Implement the LCD_DrawDot to turn on a particular dot on the LCD.
 	 */
-
-
+	LCD_OpenWindow ( usCOLUMN, usPAGE, WIDTH_EN_CHAR, HEIGHT_EN_CHAR );
+	LCD_Write_Cmd ( CMD_SetPixel );
+	LCD_Write_Data ( usColor );
 		
 }
 
@@ -445,8 +446,75 @@ void LCD_DrawEllipse ( uint16_t usC, uint16_t usP, uint16_t SR, uint16_t LR, uin
 	/*
 	 *  Task 3 : Implement LCD_DrawEllipse by using LCD_DrawDot
 	 */
-	
+	float dx, dy, d1, d2, x, y;
+	x = 0;
+	y = LR;
 
-	
+	// Initial decision parameter of region 1
+	d1 = (LR * LR) - (SR * SR * LR) +
+					 (0.25 * SR * SR);
+	dx = 2 * LR * LR * x;
+	dy = 2 * SR * SR * y;
+
+	// For region 1
+	while (dx < dy)
+	{
+
+		// Print points based on 4-way symmetry
+		LCD_DrawDot(x + usC,y + usP,usColor);
+		LCD_DrawDot(-x + usC,y + usP,usColor);
+		LCD_DrawDot(x + usC,-y + usP,usColor);
+		LCD_DrawDot(-x + usC,-y + usP,usColor);
+		// Checking and updating value of
+		// decision parameter based on algorithm
+		if (d1 < 0)
+		{
+			x++;
+			dx = dx + (2 * LR * LR);
+			d1 = d1 + dx + (LR * LR);
+
+		}
+		else
+		{
+			x++;
+			y--;
+			dx = dx + (2 * LR * LR);
+			dy = dy - (2 * SR * SR);
+			d1 = d1 + dx - dy + (LR * LR);
+		}
+	}
+
+	// Decision parameter of region 2
+	d2 = ((LR * LR) * ((x + 0.5) * (x + 0.5))) +
+		 ((SR * SR) * ((y - 1) * (y - 1))) -
+		  (SR * SR * LR * LR);
+
+	// Plotting points of region 2
+	while (y >= 0)
+	{
+
+		// Print points based on 4-way symmetry
+		LCD_DrawDot(x + usC,y + usP,usColor);
+		LCD_DrawDot(-x + usC,y + usP,usColor);
+		LCD_DrawDot(x + usC,-y + usP,usColor);
+		LCD_DrawDot(-x + usC,-y + usP,usColor);
+		// Checking and updating parameter
+		// value based on algorithm
+		if (d2 > 0)
+		{
+			y--;
+			dy = dy - (2 * SR * SR);
+			d2 = d2 + (SR * SR) - dy;
+
+		}
+		else
+		{
+			y--;
+			x++;
+			dx = dx + (2 * LR * LR);
+			dy = dy - (2 * SR * SR);
+			d2 = d2 + dx - dy + (SR * SR);
+		}
+	}
 }
 

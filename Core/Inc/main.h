@@ -51,8 +51,6 @@ void user_pwm_setvalue(TIM_HandleTypeDef *htim, uint32_t TIM_CHANNEL, uint16_t v
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
