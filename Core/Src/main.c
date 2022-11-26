@@ -25,6 +25,8 @@
 #include "dht.h"
 #include "fan.h"
 #include "hc05.h"
+#include "bsp_ov7725.h"
+#include "bsp_sccb.h"
 
 /* USER CODE END Includes */
 
@@ -48,7 +50,7 @@
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
-UART_HandleTypeDef huart3;
+UART_HandleTypeDef huart1;
 
 SRAM_HandleTypeDef hsram1;
 
@@ -61,7 +63,7 @@ char rxString[7];
 bool FAN_ON = true;
 bool LCD_ON = true;
 bool ALARM_ON = false;
-bool DHT_ON = true;
+bool DHT_ON = false;
 char strConfig[100] = "";
 
 
@@ -75,136 +77,27 @@ static void MX_GPIO_Init(void);
 static void MX_FSMC_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
-static void MX_USART3_UART_Init(void);
 static void MX_RTC_Init(void);
+static void MX_USART1_UART_Init(void);
+
+
+
 /* USER CODE BEGIN PFP */
+
+void set_time(uint8_t hours, uint8_t minutes, uint8_t seconds);
+void set_alarm(uint8_t hours, uint8_t minutes, uint8_t seconds);
+void display_time(void);
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc);
+void ring_alarm(void);
+void display_alarm_time(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void set_time(uint8_t hours, uint8_t minutes, uint8_t seconds){
-	/** Initialize RTC and set the Time and Date
-	  */
-	RTC_TimeTypeDef sTime;
-	RTC_DateTypeDef DateToUpdate;
-	sTime.Hours = hours;
-	sTime.Minutes = minutes;
-	sTime.Seconds = seconds;
-
-	if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	DateToUpdate.WeekDay = RTC_WEEKDAY_THURSDAY;
-	DateToUpdate.Month = RTC_MONTH_NOVEMBER;
-	DateToUpdate.Date = 0x24;
-	DateToUpdate.Year = 0x22;
-
-	if (HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BCD) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, 0xFFFF); // backup register
-}
-
-void set_alarm(uint8_t hours, uint8_t minutes, uint8_t seconds){
-	/** Enable the Alarm A
-	*/
-	RTC_AlarmTypeDef sAlarm;
-	sAlarm.AlarmTime.Hours = hours;
-	sAlarm.AlarmTime.Minutes = minutes;
-	sAlarm.AlarmTime.Seconds = seconds;
-	sAlarm.Alarm = RTC_ALARM_A;
-	if (HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	HAL_RTC_SetAlarm(&hrtc, &sAlarm,RTC_FORMAT_BCD);
-  /* USER CODE BEGIN RTC_Init 2 */
-
-  /* USER CODE END RTC_Init 2 */
-}
-
-void display_time(void){
-	RTC_DateTypeDef gDate;
-	RTC_TimeTypeDef gTime;
-	char time_buffer[20];
-	char date_buffer[20];
-	HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
-	HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
 
 
-	sprintf(date_buffer,"%02d-%02d-%02d",2000+gDate.Year, gDate.Month, gDate.Date);
-	sprintf(time_buffer,"%02d:%02d:%02d",gTime.Hours, gTime.Minutes, gTime.Seconds);
 
-	LCD_DrawString(20,10,date_buffer);
-	LCD_DrawString(20,30,time_buffer);
-
-}
-
-void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc){
-	alarm_on=1;
-}
-
-void ring_alarm(void){
-	RTC_AlarmTypeDef aTime;
-	HAL_RTC_GetAlarm(&hrtc, &aTime, RTC_ALARM_A, RTC_FORMAT_BIN);
-	RTC_TimeTypeDef gTime;
-	HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
-
-	if(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_4)){
-		bonus_time+=5;
-	}
-	if(bonus_time==0 && ringing==0){
-		LCD_DrawString(20,70,"WAKE UP!!!");
-		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
-		ringing = 1;
-	}
-	if(bonus_time>0){
-		HAL_Delay(1000);
-		bonus_time--;
-	}
-	//HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_14);
-	//HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-	//BUZZER
-	//TESTING
-	if(bonus_time && ringing==1){
-		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
-		ringing = 0;
-	}
-	else if(aTime.AlarmTime.Seconds+30>=59){
-		if(gTime.Minutes>aTime.AlarmTime.Minutes && gTime.Seconds>=(aTime.AlarmTime.Seconds+30)%60){
-			LCD_DrawString(20,70,"             ");
-			alarm_on=0;
-			bonus_time=0;
-			if(ringing==1){
-				HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
-				ringing = 0;
-			}
-		}
-	}
-	else if(gTime.Seconds>=aTime.AlarmTime.Seconds+30){
-		LCD_DrawString(20,70,"             ");
-		alarm_on = 0;
-		bonus_time=0;
-		if(ringing==1){
-			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
-			ringing = 0;
-		}
-	}
-}
-
-void display_alarm_time(void){
-	RTC_AlarmTypeDef aTime;
-	HAL_RTC_GetAlarm(&hrtc, &aTime, RTC_ALARM_A, RTC_FORMAT_BIN);
-	char atime_buffer[20];
-
-	sprintf(atime_buffer,"Alarm Time: %02d:%02d:%02d",aTime.AlarmTime.Hours, aTime.AlarmTime.Minutes, aTime.AlarmTime.Seconds);
-	char bonus_time_buffer[20];
-	sprintf(bonus_time_buffer,"Bonus Time: %02d",bonus_time);
-	LCD_DrawString(20,50,atime_buffer);
-	LCD_DrawString(20,90,bonus_time_buffer);
-}
 
 
 /* USER CODE END 0 */
@@ -240,8 +133,8 @@ int main(void)
   MX_FSMC_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
-  MX_USART3_UART_Init();
   MX_RTC_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   LCD_INIT();
   //if(HAL_RTCEx_BKUPRead(&hrtc,RTC_BKP_DR1) != 0xFFFF){
@@ -262,7 +155,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_Delay(100);
 	  if (HAL_UART_Receive(&huart3,(uint8_t*)rxString,7,200)==HAL_OK) {
 		  if(checkFanON(rxString)) FAN_ON = true;
 		  else if(checkFanOFF(rxString))FAN_ON = false;
@@ -431,7 +323,6 @@ static void MX_TIM2_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
 
@@ -451,28 +342,15 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
-  HAL_TIM_MspPostInit(&htim2);
 
 }
 
@@ -498,7 +376,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 0;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 63;
+  htim3.Init.Period = 10;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -524,7 +402,7 @@ static void MX_TIM3_Init(void)
   sConfigOC.Pulse = 10;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
   }
@@ -536,35 +414,35 @@ static void MX_TIM3_Init(void)
 }
 
 /**
-  * @brief USART3 Initialization Function
+  * @brief USART1 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_USART3_UART_Init(void)
+static void MX_USART1_UART_Init(void)
 {
 
-  /* USER CODE BEGIN USART3_Init 0 */
+  /* USER CODE BEGIN USART1_Init 0 */
 
-  /* USER CODE END USART3_Init 0 */
+  /* USER CODE END USART1_Init 0 */
 
-  /* USER CODE BEGIN USART3_Init 1 */
+  /* USER CODE BEGIN USART1_Init 1 */
 
-  /* USER CODE END USART3_Init 1 */
-  huart3.Instance = USART3;
-  huart3.Init.BaudRate = 9600;
-  huart3.Init.WordLength = UART_WORDLENGTH_8B;
-  huart3.Init.StopBits = UART_STOPBITS_1;
-  huart3.Init.Parity = UART_PARITY_NONE;
-  huart3.Init.Mode = UART_MODE_TX_RX;
-  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart3) != HAL_OK)
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 9600;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART3_Init 2 */
+  /* USER CODE BEGIN USART1_Init 2 */
 
-  /* USER CODE END USART3_Init 2 */
+  /* USER CODE END USART1_Init 2 */
 
 }
 
@@ -585,6 +463,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_11|GPIO_PIN_12, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
@@ -594,13 +475,20 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|GPIO_PIN_6, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_3, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8|GPIO_PIN_11|GPIO_PIN_12, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PA2 PA3 PA11 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_11;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA6 PA12 */
   GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_12;
@@ -629,6 +517,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PB10 PB11 PB12 PB13
+                           PB14 PB15 PB8 PB9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13
+                          |GPIO_PIN_14|GPIO_PIN_15|GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
   /*Configure GPIO pin : PD12 */
   GPIO_InitStruct.Pin = GPIO_PIN_12;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -636,12 +532,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA8 PA11 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_11;
+  /*Configure GPIO pins : PC6 PC7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PD3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB6 */
   GPIO_InitStruct.Pin = GPIO_PIN_6;
@@ -728,6 +631,128 @@ void user_pwm_setvalue(TIM_HandleTypeDef *htim, uint32_t TIM_CHANNEL, uint16_t v
 
     HAL_TIM_PWM_ConfigChannel(htim, &sConfigOC, TIM_CHANNEL);
     HAL_TIM_PWM_Start(htim, TIM_CHANNEL);
+}
+void set_time(uint8_t hours, uint8_t minutes, uint8_t seconds){
+	/** Initialize RTC and set the Time and Date
+	  */
+	RTC_TimeTypeDef sTime;
+	RTC_DateTypeDef DateToUpdate;
+	sTime.Hours = hours;
+	sTime.Minutes = minutes;
+	sTime.Seconds = seconds;
+
+	if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	DateToUpdate.WeekDay = RTC_WEEKDAY_THURSDAY;
+	DateToUpdate.Month = RTC_MONTH_NOVEMBER;
+	DateToUpdate.Date = 0x24;
+	DateToUpdate.Year = 0x22;
+
+	if (HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, 0xFFFF); // backup register
+}
+void set_alarm(uint8_t hours, uint8_t minutes, uint8_t seconds){
+	/** Enable the Alarm A
+	*/
+	RTC_AlarmTypeDef sAlarm;
+	sAlarm.AlarmTime.Hours = hours;
+	sAlarm.AlarmTime.Minutes = minutes;
+	sAlarm.AlarmTime.Seconds = seconds;
+	sAlarm.Alarm = RTC_ALARM_A;
+	if (HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	HAL_RTC_SetAlarm(&hrtc, &sAlarm,RTC_FORMAT_BCD);
+  /* USER CODE BEGIN RTC_Init 2 */
+
+  /* USER CODE END RTC_Init 2 */
+}
+
+void display_time(void){
+	RTC_DateTypeDef gDate;
+	RTC_TimeTypeDef gTime;
+	char time_buffer[20];
+	char date_buffer[20];
+	HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
+	HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
+
+
+	sprintf(date_buffer,"%02d-%02d-%02d",2000+gDate.Year, gDate.Month, gDate.Date);
+	sprintf(time_buffer,"%02d:%02d:%02d",gTime.Hours, gTime.Minutes, gTime.Seconds);
+
+	LCD_DrawString(20,10,date_buffer);
+	LCD_DrawString(20,30,time_buffer);
+
+}
+
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc){
+	alarm_on=1;
+}
+
+void ring_alarm(void){
+	RTC_AlarmTypeDef aTime;
+	HAL_RTC_GetAlarm(&hrtc, &aTime, RTC_ALARM_A, RTC_FORMAT_BIN);
+	RTC_TimeTypeDef gTime;
+	HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
+
+	if(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_4)){
+		bonus_time+=5;
+	}
+	if(bonus_time==0 && ringing==0){
+		LCD_DrawString(20,70,"WAKE UP!!!");
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
+		ringing = 1;
+	}
+	if(bonus_time>0){
+		HAL_Delay(1000);
+		bonus_time--;
+	}
+	//HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_14);
+	//HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+	//BUZZER
+	//TESTING
+	if(bonus_time && ringing==1){
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
+		ringing = 0;
+	}
+	else if(aTime.AlarmTime.Seconds+30>=59){
+		if(gTime.Minutes>aTime.AlarmTime.Minutes && gTime.Seconds>=(aTime.AlarmTime.Seconds+30)%60){
+			LCD_DrawString(20,70,"             ");
+			alarm_on=0;
+			bonus_time=0;
+			if(ringing==1){
+				HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
+				ringing = 0;
+			}
+		}
+	}
+	else if(gTime.Seconds>=aTime.AlarmTime.Seconds+30){
+		LCD_DrawString(20,70,"             ");
+		alarm_on = 0;
+		bonus_time=0;
+		if(ringing==1){
+			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
+			ringing = 0;
+		}
+	}
+}
+
+void display_alarm_time(void){
+	RTC_AlarmTypeDef aTime;
+	HAL_RTC_GetAlarm(&hrtc, &aTime, RTC_ALARM_A, RTC_FORMAT_BIN);
+	char atime_buffer[20];
+
+	sprintf(atime_buffer,"Alarm Time: %02d:%02d:%02d",aTime.AlarmTime.Hours, aTime.AlarmTime.Minutes, aTime.AlarmTime.Seconds);
+	char bonus_time_buffer[20];
+	sprintf(bonus_time_buffer,"Bonus Time: %02d",bonus_time);
+	LCD_DrawString(20,50,atime_buffer);
+	LCD_DrawString(20,90,bonus_time_buffer);
 }
 /* USER CODE END 4 */
 
